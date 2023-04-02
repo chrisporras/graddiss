@@ -28,12 +28,12 @@ To save and access saved models
 For saving and loading models
 """
 
-import google.colab
+#import google.colab
+#
+#from google.colab import drive
+#drive.mount('/content/drive')
 
-from google.colab import drive
-drive.mount('/content/drive')
-
-save_models_dir = "/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/"
+#save_models_dir = "/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/"
 
 """## Install and load Kaggle mammography"""
 
@@ -63,14 +63,17 @@ save_models_dir = "/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/"
 class Config:
     resize = False
     batch_size = 32
-    numworkers = 0
+    numworkers = 1
 
 !pip install torchvision
 
 !printf 'y\ny\ny\n' | conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.6 -c pytorch -c conda-forge
 
-import os
-from PIL import Image
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("Using device: ", device)
+
+#import os
+#from PIL import Image
 # import torchvision
 # from skimage import io, img_as_float32
 # import numpy as np
@@ -80,19 +83,19 @@ from PIL import Image
 # from skimage import exposure
 # import cv2
 
-import torchvision
+#import torchvision
 
 !python -m pip install -U scikit-image
 
 !pip install opencv-python
 
-from skimage import io, img_as_float32
-import numpy as np
-import torch
-from skimage.io import imread
-from skimage.util import img_as_ubyte
-from skimage import exposure
-import cv2
+#from skimage import io, img_as_float32
+#import numpy as np
+#import torch
+#from skimage.io import imread
+#from skimage.util import img_as_ubyte
+#from skimage import exposure
+#import cv2
 
 import os
 from PIL import Image
@@ -549,7 +552,7 @@ import random
 cudnn.benchmark = True
 plt.ion()   # interactive mode
 
-def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
+def train_model(model, criterion, optimizer, scheduler, num_epochs=50):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -667,7 +670,7 @@ optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.0001)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
 
 model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=25)
+                       num_epochs=50)
 
 # Save the best model
 torch.save(model_ft.state_dict(), save_models_dir+'best_resnet18_dsnormalized.pt')
@@ -694,7 +697,7 @@ optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.0001)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
 
 model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=25)
+                       num_epochs=50)
 
 # Save the best model
 torch.save(model_ft.state_dict(), save_models_dir+'best_resnet50_dsnormalized.pt')
@@ -722,7 +725,7 @@ optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.0001)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
 
 model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=25)
+                       num_epochs=50)
 
 # Save the best model
 torch.save(model_ft.state_dict(), save_models_dir+'best_vgg16_new.pt')
@@ -733,994 +736,186 @@ torch.save({'epoch': 25,
             'optimizer_state_dict': optimizer_ft.state_dict(),
             }, save_models_dir+'best_vgg16_new_CHECKPOINT25.pt')
 
-"""# Best VGG19 Results
-
-## VGG19_BN for 25 epochs
-"""
-
-model_ft = models.vgg19_bn(weights="DEFAULT")
-num_ftrs = model_ft.classifier[6].in_features # the 6 gets me to the linear layer of VGG
-model_ft.classifier[6] = nn.Linear(num_ftrs, 5)
-
-model_ft = model_ft.to(device)
-
-criterion = nn.CrossEntropyLoss()
-
-# Observe that all parameters are being optimized
-optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.0001)
-
-# Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
-
-model_ft
-
-model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=25)
-
-torch.save(model_ft.state_dict(), save_models_dir+'best_vgg19_new.pt')
-
-# Save checkpoint
-torch.save({'epoch': 25,
-            'model_state_dict': model_ft.state_dict(),
-            'optimizer_state_dict': optimizer_ft.state_dict(),
-            }, save_models_dir+'best_vgg19_new_CHECKPOINT25.pt')
-
-"""# Best EfficientNet Results (EfficientNet B3)"""
-
-efficentnet_model = models.efficientnet_b3(weights="DEFAULT")
-num_ftrs = efficentnet_model.classifier[1].in_features
-# Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
-efficentnet_model.classifier[1] = nn.Linear(num_ftrs, 5)
-
-efficentnet_model = efficentnet_model.to(device)
-
-criterion = nn.CrossEntropyLoss()
-
-# Observe that all parameters are being optimized
-optimizer_ft = optim.Adam(efficentnet_model.parameters(), lr=0.0001)
-
-# Decay LR by a factor of 0.1 every (step_size) epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)# Save the best model
-
-efficentnet_model = train_model(efficentnet_model, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=25)
-
-# Save the best model
-torch.save(efficentnet_model.state_dict(), save_models_dir+'best_efficientnetb3_model.pt')
-
-# Save checkpoint
-torch.save({'epoch': 25,
-            'model_state_dict': efficentnet_model.state_dict(),
-            'optimizer_state_dict': optimizer_ft.state_dict(),
-            }, save_models_dir+'best_efficientnetb3_CHECKPOINT25.pt')
-
-"""# Training Ensemble (Stacking/blending)
-
-## Stacked ensemble
-"""
-
-class load_VGG19_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG19_BN, self).__init__()
-        self.model = torchvision.models.vgg19_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg19_new.pt'))
-        # self.model.eval()
-    def forward(self, x):        
-        return self.model(x)
-
-class load_VGG16_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG16_BN, self).__init__()
-        self.model = torchvision.models.vgg16_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg16_new.pt'))
-        # self.model.eval()         
-    def forward(self, x):        
-        return self.model(x)
-
-class load_ResNet50(nn.Module):
-    def __init__(self):
-        super(load_ResNet50, self).__init__()
-        self.model = torchvision.models.resnet50()
-        #print(self.model)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
-        # self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-class StackedEnsemble(nn.Module):
-    """
-    Stacked ensembling / blending ensemble technique
-    """
-
-    def __init__(self,  modelA, modelB, modelC):
-        super(StackedEnsemble, self).__init__()
-        
-        self.modelA = modelA
-        self.modelB = modelB
-        self.modelC = modelC
-
-        self.classifier = nn.Linear(5*3, 5)
-                
-    def forward(self, x):
-        # self.modelA.eval()  
-        x1 = self.modelA(x)
-
-        # self.modelB.eval()
-        x2 = self.modelB(x)
-
-        # self.modelC.eval()
-        x3 = self.modelC(x)
-
-        x = torch.cat((x1, x2, x3), dim=1)
-        out = self.classifier(x)
-        return out
-
-# ResNet50
-resnet50_model = load_ResNet50()
-# num_ftrs = resnet50_model.fc.in_features
-# resnet50_model.fc = nn.Linear(num_ftrs, 5)
-# resnet50_model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
-# resnet50_model = resnet50_model.to(device)
-
-# VGG16_BN
-vgg16_bn_model = load_VGG16_BN()
-# num_ftrs = vgg16_bn_model.classifier[6].in_features
-# vgg16_bn_model.fc = nn.Linear(num_ftrs, 5)
-# vgg16_bn_model.load_state_dict(torch.load(save_models_dir+'best_vgg16.pt'))
-# vgg16_bn_model = vgg16_bn_model.to(device)
-
-# VGG19_BN
-vgg19_bn_model = load_VGG19_BN()
-# num_ftrs = vgg19_bn_model.classifier[6].in_features
-# vgg19_bn_model.fc = nn.Linear(num_ftrs, 5)
-# vgg19_bn_model.load_state_dict(torch.load(save_models_dir+'best_vgg19_bn_model.pt'))
-# vgg19_bn_model = vgg19_bn_model.to(device)
-
-vgg19_bn_model
-
-vgg16_bn_model
-
-resnet50_model
-
-# models = [resnet50_model, vgg16_bn_model, vgg19_bn_model]
-stacked_ensemble_model = StackedEnsemble(resnet50_model, vgg16_bn_model, vgg19_bn_model)
-
-for param in stacked_ensemble_model.parameters():
-  param.requires_grad = False
-
-# Training for only this layer - what weights and biases can best combine each 
-# sub-model prediction?
-for param in stacked_ensemble_model.classifier.parameters():
-  param.requires_grad = True
-
-stacked_ensemble_model = stacked_ensemble_model.to(device)
-
-criterion = nn.CrossEntropyLoss()
-
-# Observe that all parameters are being optimized
-optimizer = optim.Adam(stacked_ensemble_model.parameters(), lr=0.0001)
-
-# Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-
-stacked_ensemble_model = train_model(stacked_ensemble_model , criterion, optimizer, exp_lr_scheduler,
-                       num_epochs=25)
-
-# Save the best model
-torch.save(stacked_ensemble_model.state_dict(), save_models_dir+'stacked_ensemble_attempt2_vgg16bn_vgg19bn_resnet50.pt')
-
-"""# Entry Submissions"""
-
-def model_test(model):
-  results = {}
-  
-  model.to(device)
-  with torch.no_grad():
-    for i, (inputs, labels) in enumerate(dataloaders['test']):
-      inputs = inputs.to(device)
-      # labels = labels.to(device)
-      # print(len(labels))
-
-      outputs = model(inputs)
-      _, preds = torch.max(outputs, 1)
-
-      # print(preds)
-      preds_list = [num_labels[x.item()] for x in preds]
-      # print(len(preds_list))
-
-      for i in range(len(labels)):
-        results[labels[i]] = preds_list[i]
-
-  return results
-
-def ensemble_averaging(modelA, modelB, modelC):
-  """
-  This function implements a simple ensemble technique of averaging model 
-  predictions to directly make a prediction
-  """
-  results = {}
-  
-  modelA.to(device)
-  modelB.to(device)
-  modelC.to(device)
-
-  with torch.no_grad():
-    for i, (inputs, labels) in enumerate(dataloaders['test']):
-      inputs = inputs.to(device)
-      # labels = labels.to(device)
-      # print(len(labels))
-
-      # outputs = model(inputs)
-      out_modelA = modelA(inputs)
-      print(out_modelA.shape)
-      out_modelB = modelB(inputs)
-      print(out_modelB.shape)
-      out_modelC = modelC(inputs)
-      print(out_modelC.shape)
-
-      outputs = (out_modelA + out_modelB + out_modelC) / 3
-      print("\nAveraged outputs for this batch:\n{}\n".format(outputs))
-      _, preds = torch.max(outputs, 1)
-
-      # print(preds)
-      preds_list = [num_labels[x.item()] for x in preds]
-      # print(len(preds_list))
-
-      for i in range(len(labels)):
-        results[labels[i]] = preds_list[i]
-
-  return results
-
-"""For 4 models"""
-
-def ensemble_averaging(modelA, modelB, modelC, modelD):
-  """
-  This function implements a simple ensemble technique of averaging model 
-  predictions to directly make a prediction
-  """
-  results = {}
-  
-  modelA.to(device)
-  modelB.to(device)
-  modelC.to(device)
-  modelD.to(device)
-
-  with torch.no_grad():
-    for i, (inputs, labels) in enumerate(dataloaders['test']):
-      inputs = inputs.to(device)
-      # labels = labels.to(device)
-      # print(len(labels))
-
-      # outputs = model(inputs)
-      out_modelA = modelA(inputs)
-      print(out_modelA.shape)
-      out_modelB = modelB(inputs)
-      print(out_modelB.shape)
-      out_modelC = modelC(inputs)
-      print(out_modelC.shape)
-      out_modelD = modelD(inputs)
-      print(out_modelD.shape)
-
-      outputs = (out_modelA + out_modelB + out_modelC + out_modelD) / 4
-      print("\nAveraged outputs for this batch:\n{}\n".format(outputs))
-      _, preds = torch.max(outputs, 1)
-
-      # print(preds)
-      preds_list = [num_labels[x.item()] for x in preds]
-      # print(len(preds_list))
-
-      for i in range(len(labels)):
-        results[labels[i]] = preds_list[i]
-
-  return results
-
-"""For 5 models"""
-
-def ensemble_averaging(modelA, modelB, modelC, modelD, modelE):
-  """
-  This function implements a simple ensemble technique of averaging model 
-  predictions to directly make a prediction
-  """
-  results = {}
-  
-  modelA.to(device)
-  modelB.to(device)
-  modelC.to(device)
-  modelD.to(device)
-  modelE.to(device)
-
-  with torch.no_grad():
-    for i, (inputs, labels) in enumerate(dataloaders['test']):
-      inputs = inputs.to(device)
-      # labels = labels.to(device)
-      # print(len(labels))
-
-      # outputs = model(inputs)
-      out_modelA = modelA(inputs)
-      print(out_modelA.shape)
-      out_modelB = modelB(inputs)
-      print(out_modelB.shape)
-      out_modelC = modelC(inputs)
-      print(out_modelC.shape)
-      out_modelD = modelD(inputs)
-      print(out_modelD.shape)
-      out_modelE = modelE(inputs)
-      print(out_modelE.shape)
-
-      outputs = (out_modelA + out_modelB + out_modelC + out_modelD + out_modelE) / 5
-      # print("\nAveraged outputs for this batch:\n{}\n".format(outputs))
-      _, preds = torch.max(outputs, 1)
-
-      # print(preds)
-      preds_list = [num_labels[x.item()] for x in preds]
-      # print(len(preds_list))
-
-      for i in range(len(labels)):
-        results[labels[i]] = preds_list[i]
-
-  return results
-
-"""## Ensemble though simple, unweighted averaging of 5 individual model predictions
-Val acc: 
-
-See different ensemble techniques here: https://web.archive.org/web/20210724194837/https://mlwave.com/kaggle-ensembling-guide/
-"""
-
-class load_VGG19_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG19_BN, self).__init__()
-        self.model = torchvision.models.vgg19_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg19_new.pt'))
-        self.model.eval()
-    def forward(self, x):        
-        return self.model(x)
-
-class load_VGG16_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG16_BN, self).__init__()
-        self.model = torchvision.models.vgg16_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg16_new.pt'))
-        self.model.eval()         
-    def forward(self, x):        
-        return self.model(x)
-
-class load_ResNet50(nn.Module):
-    def __init__(self):
-        super(load_ResNet50, self).__init__()
-        self.model = torchvision.models.resnet50()
-        #print(self.model)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
-        self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-class load_ResNet18(nn.Module):
-    def __init__(self):
-        super(load_ResNet18, self).__init__()
-        self.model = torchvision.models.resnet18()
-        #print(self.model)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_resnet18_dsnormalized.pt'))
-        self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-class load_EfficientNet_B3(nn.Module):
-    def __init__(self):
-        super(load_EfficientNet_B3, self).__init__()
-        self.model = torchvision.models.efficientnet_b3()
-        #print(self.model)
-        num_ftrs = self.model.classifier[1].in_features
-        self.model.classifier[1] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_efficientnetb3_model.pt'))
-        self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-# ResNet50
-resnet50_model = load_ResNet50()
-# print(resnet50_model)
-# resnet50_model = resnet50_model.to(device)
-
-# ResNet18
-resnet18_model = load_ResNet18()
-# print(resnet50_model)
-# resnet50_model = resnet50_model.to(device)
-
-# VGG16_BN
-vgg16_bn_model = load_VGG16_BN()
-# print(vgg16_bn_model)
-# vgg16_bn_model = vgg16_bn_model.to(device)
-
-# VGG19_BN
-vgg19_bn_model = load_VGG19_BN()
-# print(vgg19_bn_model)
-# vgg19_bn_model = vgg19_bn_model.to(device)
-
-results = ensemble_averaging(resnet50_model, resnet18_model, vgg16_bn_model, vgg19_bn_model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv(save_models_dir+'submissions/ensemble_avg_vgg16_vgg19_resnet50_resnet18.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## Stacked ensemble attempt 2 """
-
-stacked_ensemble_model.eval()
-results = model_test(stacked_ensemble_model)
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv(save_models_dir+'submissions/stacked_ensemble_attempt2_avg_vgg16_vgg19_resnet50.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## Ensemble though simple, unweighted averaging of 4 individual model predictions
-Val acc: 0.80388
-
-See different ensemble techniques here: https://web.archive.org/web/20210724194837/https://mlwave.com/kaggle-ensembling-guide/
-"""
-
-class load_VGG19_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG19_BN, self).__init__()
-        self.model = torchvision.models.vgg19_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg19_new.pt'))
-        self.model.eval()
-    def forward(self, x):        
-        return self.model(x)
-
-class load_VGG16_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG16_BN, self).__init__()
-        self.model = torchvision.models.vgg16_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg16_new.pt'))
-        self.model.eval()         
-    def forward(self, x):        
-        return self.model(x)
-
-class load_ResNet50(nn.Module):
-    def __init__(self):
-        super(load_ResNet50, self).__init__()
-        self.model = torchvision.models.resnet50()
-        #print(self.model)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
-        self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-class load_ResNet18(nn.Module):
-    def __init__(self):
-        super(load_ResNet18, self).__init__()
-        self.model = torchvision.models.resnet18()
-        #print(self.model)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_resnet18_dsnormalized.pt'))
-        self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-# ResNet50
-resnet50_model = load_ResNet50()
-# print(resnet50_model)
-# resnet50_model = resnet50_model.to(device)
-
-# ResNet18
-resnet18_model = load_ResNet18()
-# print(resnet50_model)
-# resnet50_model = resnet50_model.to(device)
-
-# VGG16_BN
-vgg16_bn_model = load_VGG16_BN()
-# print(vgg16_bn_model)
-# vgg16_bn_model = vgg16_bn_model.to(device)
-
-# VGG19_BN
-vgg19_bn_model = load_VGG19_BN()
-# print(vgg19_bn_model)
-# vgg19_bn_model = vgg19_bn_model.to(device)
-
-results = ensemble_averaging(resnet50_model, resnet18_model, vgg16_bn_model, vgg19_bn_model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv(save_models_dir+'submissions/ensemble_avg_vgg16_vgg19_resnet50_resnet18.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## Ensemble stacking - attempt 1
-I am a bit skeptical of the higher val accuracy than training accuracy
-
-Val acc: 0.73419
-"""
-
-class load_VGG19_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG19_BN, self).__init__()
-        self.model = torchvision.models.vgg19_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        # self.model.load_state_dict(torch.load(save_models_dir+'best_vgg19_new.pt'))
-        # self.model.eval()
-    def forward(self, x):        
-        return self.model(x)
-
-class load_VGG16_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG16_BN, self).__init__()
-        self.model = torchvision.models.vgg16_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        # self.model.load_state_dict(torch.load(save_models_dir+'best_vgg16_new.pt'))
-        # self.model.eval()         
-    def forward(self, x):        
-        return self.model(x)
-
-class load_ResNet50(nn.Module):
-    def __init__(self):
-        super(load_ResNet50, self).__init__()
-        self.model = torchvision.models.resnet50()
-        #print(self.model)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 5)
-        # self.model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
-        # self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-class StackedEnsemble(nn.Module):
-    """
-    Stacked ensembling / blending ensemble technique
-    """
-
-    def __init__(self,  modelA, modelB, modelC):
-        super(StackedEnsemble, self).__init__()
-        
-        self.modelA = modelA
-        self.modelB = modelB
-        self.modelC = modelC
-
-        self.classifier = nn.Linear(5*3, 5)
-                
-    def forward(self, x):
-        self.modelA.eval()  
-        x1 = self.modelA(x)
-
-        self.modelB.eval()
-        x2 = self.modelB(x)
-
-        self.modelC.eval()
-        x3 = self.modelC(x)
-
-        x = torch.cat((x1, x2, x3), dim=1)
-        out = self.classifier(x)
-        return out
-
-# ResNet50
-resnet50_model = load_ResNet50()
-
-# VGG16_BN
-vgg16_bn_model = load_VGG16_BN()
-
-# VGG19_BN
-vgg19_bn_model = load_VGG19_BN()
-
-stacked_ensemble_model = StackedEnsemble(resnet50_model, vgg16_bn_model, vgg19_bn_model)
-stacked_ensemble_model.load_state_dict(torch.load(save_models_dir+'stacked_ensemble_vgg16bn_vgg19bn_resnet50.pt'))
-stacked_ensemble_model.eval()
-
-results = model_test(stacked_ensemble_model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv(save_models_dir+'submissions/stacked_ensemble_avg_vgg16_vgg19_resnet50.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## Ensemble though simple, unweighted averaging of individual model predictions ⭐
-Val acc: 0.79578
-
-See different ensemble techniques here: https://web.archive.org/web/20210724194837/https://mlwave.com/kaggle-ensembling-guide/
-"""
-
-class load_VGG19_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG19_BN, self).__init__()
-        self.model = torchvision.models.vgg19_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg19_new.pt'))
-        self.model.eval()
-    def forward(self, x):        
-        return self.model(x)
-
-class load_VGG16_BN(nn.Module):
-    def __init__(self):
-        super(load_VGG16_BN, self).__init__()
-        self.model = torchvision.models.vgg16_bn()
-        #print(self.model)
-        num_ftrs = self.model.classifier[6].in_features
-        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg16_new.pt'))
-        self.model.eval()         
-    def forward(self, x):        
-        return self.model(x)
-
-class load_ResNet50(nn.Module):
-    def __init__(self):
-        super(load_ResNet50, self).__init__()
-        self.model = torchvision.models.resnet50()
-        #print(self.model)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, 5)
-        self.model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
-        self.model.eval()        
-    def forward(self, x):        
-        return self.model(x)
-
-# ResNet50
-resnet50_model = load_ResNet50()
-# print(resnet50_model)
-# resnet50_model = resnet50_model.to(device)
-
-# VGG16_BN
-vgg16_bn_model = load_VGG16_BN()
-# print(vgg16_bn_model)
-# vgg16_bn_model = vgg16_bn_model.to(device)
-
-# VGG19_BN
-vgg19_bn_model = load_VGG19_BN()
-# print(vgg19_bn_model)
-# vgg19_bn_model = vgg19_bn_model.to(device)
-
-results = ensemble_averaging(resnet50_model, vgg16_bn_model, vgg19_bn_model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv(save_models_dir+'submissions/ensemble_avg_vgg16_vgg19_resnet50.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## VGG19_BN
-Test accuracy: 
-"""
-
-model = models.vgg19_bn(weights="DEFAULT")
-num_ftrs = model.classifier[6].in_features # the 6 gets me to the linear layer of VGG
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load(save_models_dir+'best_vgg19_bn_model.pt'))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/vgg19_bn_submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## Ensemble Approach - VGG16_BN, VGG19_BN, ResNet50 - 25 epochs"""
-
-# ResNet50
-resnet50_model = load_ResNet50()
-resnet50_model = resnet50_model.to(device)
-
-# VGG16_BN
-vgg16_bn_model = load_VGG16_BN()
-vgg16_bn_model = vgg16_bn_model.to(device)
-
-# VGG19_BN
-vgg19_bn_model = load_VGG19_BN()
-vgg19_bn_model = vgg19_bn_model.to(device)
-models = [resnet50_model, vgg16_bn_model, vgg19_bn_model]
-model = EnsembleModels(models)
-model.load_state_dict(torch.load(save_models_dir+'ensemble_vgg16bn_vgg19bn_resnet50.pt'))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/ensemble_vgg16bn_vgg19bn_resnet50_25epochs.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## Ensemble Approach - VGG16_BN, VGG19_BN, ResNet50 - 5 epochs"""
-
-resnet50_model = load_ResNet50()
-resnet50_model = resnet50_model.to(device)
-
-# VGG16_BN
-vgg16_bn_model = load_VGG16_BN()
-vgg16_bn_model = vgg16_bn_model.to(device)
-
-# VGG19_BN
-vgg19_bn_model = load_VGG19_BN()
-vgg19_bn_model = vgg19_bn_model.to(device)
-models = [resnet50_model, vgg16_bn_model, vgg19_bn_model]
-model = EnsembleModels(models)
-model.load_state_dict(torch.load(save_models_dir+'ensemble_vgg16bn_vgg19bn_resnet50.pt'))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/ensemble_vgg16bn_vgg19bn_resnet50.pt',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## VGG16_BN
-Test accuracy: 0.79416
-"""
-
-model = models.vgg16_bn(weights="DEFAULT")
-num_ftrs = model.classifier[6].in_features # the 6 gets me to the linear layer of VGG
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load(save_models_dir+'best_vgg16.pt'))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/vgg16_bn_submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## VGG16_BN"""
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-# !kaggle competitions submit -c mammography-image-patch-classification-2023 -f submission.csv -m "GradientDissenters - 03212023"
-
-"""## ResNet50 with normalization and lr 0.0005"""
-
-model = models.resnet50()
-num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized_lrincr.pt'))
-model.eval()
-
-results = model_test(model)
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv(save_models_dir+'submissions/resnet50dsnorm_incrlr_submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## ResNet50 with normalization"""
-
-model = models.resnet50()
-num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
-model.eval()
-
-results = model_test(model)
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv(save_models_dir+'submissions/resnet50dsnorm_submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## VGG16_BN"""
-
-model = models.vgg16_bn(weights="DEFAULT")
-num_ftrs = model.classifier[6].in_features # the 6 gets me to the linear layer of VGG
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/best_vgg16_bnmodel_Adam_balanced.pt'))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-# !kaggle competitions submit -c mammography-image-patch-classification-2023 -f submission.csv -m "GradientDissenters - 03212023"
-
-"""## ResNet50 multistage"""
-
-model = models.resnet50(weights="DEFAULT")
-num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/best_resnet50_multistage_train.pt'))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/resnet50_submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## ResNet50 - 90/10 train/val"""
-
-model = models.resnet50()
-num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/best_resnet50_balanced_AdamOptim.pt'))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/resnet50_90_10_submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
-
-"""## Multi-stage ResNet"""
-
-model = models.resnet50()
-num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, 5)
-
-model.load_state_dict(torch.load(save_models_dir + "best_resnet50_multistage_train.pt"))
-model.eval()
-
-results = model_test(model)
-
-submission_df = pd.DataFrame.from_dict(results, orient="index",
-                                       columns=["label"])
-submission_df = submission_df.reset_index()
-submission_df = submission_df.rename({"index":"id"}, axis="columns")
-submission_df
-
-# Save to two places - Google Drive and content
-submission_df.to_csv('/content/drive/MyDrive/ML for BDS/Hackathon - graddiss/submissions/resnet50_multistage_submission.csv',
-                    index=False)
-
-submission_df.to_csv('/content/submission.csv',
-                    index=False)
+#"""# Best VGG19 Results
+#
+### VGG19_BN for 25 epochs
+#"""
+#
+#model_ft = models.vgg19_bn(weights="DEFAULT")
+#num_ftrs = model_ft.classifier[6].in_features # the 6 gets me to the linear layer of VGG
+#model_ft.classifier[6] = nn.Linear(num_ftrs, 5)
+#
+#model_ft = model_ft.to(device)
+#
+#criterion = nn.CrossEntropyLoss()
+#
+## Observe that all parameters are being optimized
+#optimizer_ft = optim.Adam(model_ft.parameters(), lr=0.0001)
+#
+## Decay LR by a factor of 0.1 every 7 epochs
+#exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)
+#
+#model_ft
+#
+#model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
+#                       num_epochs=25)
+#
+#torch.save(model_ft.state_dict(), save_models_dir+'best_vgg19_new.pt')
+#
+## Save checkpoint
+#torch.save({'epoch': 25,
+#            'model_state_dict': model_ft.state_dict(),
+#            'optimizer_state_dict': optimizer_ft.state_dict(),
+#            }, save_models_dir+'best_vgg19_new_CHECKPOINT25.pt')
+#
+#"""# Best EfficientNet Results (EfficientNet B3)"""
+#
+#efficentnet_model = models.efficientnet_b3(weights="DEFAULT")
+#num_ftrs = efficentnet_model.classifier[1].in_features
+## Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
+#efficentnet_model.classifier[1] = nn.Linear(num_ftrs, 5)
+#
+#efficentnet_model = efficentnet_model.to(device)
+#
+#criterion = nn.CrossEntropyLoss()
+#
+## Observe that all parameters are being optimized
+#optimizer_ft = optim.Adam(efficentnet_model.parameters(), lr=0.0001)
+#
+## Decay LR by a factor of 0.1 every (step_size) epochs
+#exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.1)# Save the best model
+#
+#efficentnet_model = train_model(efficentnet_model, criterion, optimizer_ft, exp_lr_scheduler,
+#                       num_epochs=25)
+#
+## Save the best model
+#torch.save(efficentnet_model.state_dict(), save_models_dir+'best_efficientnetb3_model.pt')
+#
+## Save checkpoint
+#torch.save({'epoch': 25,
+#            'model_state_dict': efficentnet_model.state_dict(),
+#            'optimizer_state_dict': optimizer_ft.state_dict(),
+#            }, save_models_dir+'best_efficientnetb3_CHECKPOINT25.pt')
+#
+#"""# Training Ensemble (Stacking/blending)
+#
+### Stacked ensemble
+#"""
+#
+#class load_VGG19_BN(nn.Module):
+#    def __init__(self):
+#        super(load_VGG19_BN, self).__init__()
+#        self.model = torchvision.models.vgg19_bn()
+#        #print(self.model)
+#        num_ftrs = self.model.classifier[6].in_features
+#        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
+#        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg19_new.pt'))
+#        # self.model.eval()
+#    def forward(self, x):
+#        return self.model(x)
+#
+#class load_VGG16_BN(nn.Module):
+#    def __init__(self):
+#        super(load_VGG16_BN, self).__init__()
+#        self.model = torchvision.models.vgg16_bn()
+#        #print(self.model)
+#        num_ftrs = self.model.classifier[6].in_features
+#        self.model.classifier[6] = nn.Linear(num_ftrs, 5)
+#        self.model.load_state_dict(torch.load(save_models_dir+'best_vgg16_new.pt'))
+#        # self.model.eval()
+#    def forward(self, x):
+#        return self.model(x)
+#
+#class load_ResNet50(nn.Module):
+#    def __init__(self):
+#        super(load_ResNet50, self).__init__()
+#        self.model = torchvision.models.resnet50()
+#        #print(self.model)
+#        num_ftrs = self.model.fc.in_features
+#        self.model.fc = nn.Linear(num_ftrs, 5)
+#        self.model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
+#        # self.model.eval()
+#    def forward(self, x):
+#        return self.model(x)
+#
+#class StackedEnsemble(nn.Module):
+#    """
+#    Stacked ensembling / blending ensemble technique
+#    """
+#
+#    def __init__(self,  modelA, modelB, modelC):
+#        super(StackedEnsemble, self).__init__()
+#
+#        self.modelA = modelA
+#        self.modelB = modelB
+#        self.modelC = modelC
+#
+#        self.classifier = nn.Linear(5*3, 5)
+#
+#    def forward(self, x):
+#        # self.modelA.eval()
+#        x1 = self.modelA(x)
+#
+#        # self.modelB.eval()
+#        x2 = self.modelB(x)
+#
+#        # self.modelC.eval()
+#        x3 = self.modelC(x)
+#
+#        x = torch.cat((x1, x2, x3), dim=1)
+#        out = self.classifier(x)
+#        return out
+#
+## ResNet50
+#resnet50_model = load_ResNet50()
+## num_ftrs = resnet50_model.fc.in_features
+## resnet50_model.fc = nn.Linear(num_ftrs, 5)
+## resnet50_model.load_state_dict(torch.load(save_models_dir+'best_resnet50_dsnormalized.pt'))
+## resnet50_model = resnet50_model.to(device)
+#
+## VGG16_BN
+#vgg16_bn_model = load_VGG16_BN()
+## num_ftrs = vgg16_bn_model.classifier[6].in_features
+## vgg16_bn_model.fc = nn.Linear(num_ftrs, 5)
+## vgg16_bn_model.load_state_dict(torch.load(save_models_dir+'best_vgg16.pt'))
+## vgg16_bn_model = vgg16_bn_model.to(device)
+#
+## VGG19_BN
+#vgg19_bn_model = load_VGG19_BN()
+## num_ftrs = vgg19_bn_model.classifier[6].in_features
+## vgg19_bn_model.fc = nn.Linear(num_ftrs, 5)
+## vgg19_bn_model.load_state_dict(torch.load(save_models_dir+'best_vgg19_bn_model.pt'))
+## vgg19_bn_model = vgg19_bn_model.to(device)
+#
+#vgg19_bn_model
+#
+#vgg16_bn_model
+#
+#resnet50_model
+#
+## models = [resnet50_model, vgg16_bn_model, vgg19_bn_model]
+#stacked_ensemble_model = StackedEnsemble(resnet50_model, vgg16_bn_model, vgg19_bn_model)
+#
+#for param in stacked_ensemble_model.parameters():
+#  param.requires_grad = False
+#
+## Training for only this layer - what weights and biases can best combine each
+## sub-model prediction?
+#for param in stacked_ensemble_model.classifier.parameters():
+#  param.requires_grad = True
+#
+#stacked_ensemble_model = stacked_ensemble_model.to(device)
+#
+#criterion = nn.CrossEntropyLoss()
+#
+## Observe that all parameters are being optimized
+#optimizer = optim.Adam(stacked_ensemble_model.parameters(), lr=0.0001)
+#
+## Decay LR by a factor of 0.1 every 7 epochs
+#exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+#
+#stacked_ensemble_model = train_model(stacked_ensemble_model , criterion, optimizer, exp_lr_scheduler,
+#                       num_epochs=25)
+#
+## Save the best model
+#torch.save(stacked_ensemble_model.state_dict(), save_models_dir+'stacked_ensemble_attempt2_vgg16bn_vgg19bn_resnet50.pt')
